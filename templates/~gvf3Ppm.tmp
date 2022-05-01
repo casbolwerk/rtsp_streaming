@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- CSS Files -->
+    <link href="../static/css/black-dashboard.css?v=1.0.0" rel="stylesheet"/>
+    <!-- Black Dashboard DEMO from the template-->
+    <link href="../static/demo/demo.css" rel="stylesheet"/>
+    <!-- Nucleo Icons -->
+    <link href="../static/css/nucleo-icons.css" rel="stylesheet"/>
+</head>
+<body class="sidebar-mini">
+<div class="wrapper" style="min-height: 70vh;max-height: 800px">
+    {# page content #}
+        <div class="content" >
+            <br>
+            <br>
+            <h1 align="center">Weed detector</h1>
+            <br>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <div class="row">
+                                <img src="{{ url_for('rgb_feed') }} " alt="feed2"  height="400" width="400">
+<!--                                <img src="{{ url_for('rgb_feed') }} " alt="feed1"  height="300" width="300">-->
+                        </div>
+                    </div>
+                    <div class="col-md-2 mr-auto">
+                        <div class="row">
+                            <div class="card" style="max-width: 100%">
+                                <h3 class="card-title ml-auto mr-auto"><b>Information</b></h3>
+                                <div class="card-body">
+                                    <div class="col-md-4 mr-auto ">
+                                        <div class="row">
+                                            <h5 style="min-width: 280%">FPS:  <b><span id="fps"></span></b></h5>
+                                        </div>
+                                        <div class="row">
+                                            <h5 style="min-width: 280%">OUTPUT: <b><span id="output"></span></b></h5>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+<!--                        <div class="row">-->
+<!--                            <div class="col-md-6">-->
+<!--                                <img id="left_nozzle" src="/static/img/nozzle_non_active.png" style="width: 120px; height: 120px" alt="left">-->
+<!--                            </div>-->
+<!--                            <div class="col-md-6">-->
+<!--                                <img id="right_nozzle" src="/static/img/nozzle_non_active.png" style="width: 120px; height: 120px" alt="right">-->
+<!--                            </div>-->
+<!--                        </div>-->
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<!--   Core JS Files   -->
+<script src="/static/js/core/jquery.min.js"></script>
+<script src="/static/js/core/popper.min.js"></script>
+<script src="/static/js/core/bootstrap.min.js"></script>
+<script src="/static/js/plugins/moment.min.js"></script>
+<!-- Control Center for Black Dashboard: parallax effects, scripts for the example pages etc -->
+<script src="/static/js/black-dashboard.js?v=1.0.0"></script>
+<!-- Black Dashboard DEMO methods, don't include it in your project! -->
+<script src="/static/demo/demo.js"></script>
+<!-- Plugin for notification-->
+<script src="/static/js/plugins/jquery.validate.min.js"></script>
+<!--SocketIO library-->
+<script src="/static/js/plugins/socket.io-2.1.1.js"></script>
+<!-- javascript for the project-->
+<script type="text/javascript">
+    let socket;
+    $(document).ready(function () {
+        socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('connect', function () {
+            console.log('SocketIO: Connected to the socket.');
+        });
+        socket.on('FPS', function (msg, cb) {
+                $('#fps').text(msg);
+            });
+        // socket.on('OUTPUT', function (msg, cb) {
+        //         $('#output').text(msg);
+        //         console.log(msg);
+        //         if( msg === 'Left nozzle is active'){
+        //             document.getElementById("left_nozzle").src='/static/img/nozzle_active.png';
+        //             document.getElementById("right_nozzle").src='/static/img/nozzle_non_active.png'
+        //         }
+        //         if( msg === 'Right nozzle is active'){
+        //             document.getElementById("left_nozzle").src='/static/img/nozzle_non_active.png';
+        //             document.getElementById("right_nozzle").src='/static/img/nozzle_active.png'
+        //         }
+        //         if( msg === 'Both nozzles are active'){
+        //             document.getElementById("right_nozzle").src='/static/img/nozzle_active.png';
+        //             document.getElementById("left_nozzle").src='/static/img/nozzle_active.png'
+        //         }
+        //         if( msg === 'No nozzle is active'){
+        //             document.getElementById("left_nozzle").src='/static/img/nozzle_non_active.png';
+        //             document.getElementById("right_nozzle").src='/static/img/nozzle_non_active.png'
+        //         }
+        //     });
+        });
+</script>
+</body>
+</html>

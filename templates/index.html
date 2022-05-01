@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- CSS Files -->
+    <link href="../static/css/black-dashboard.css?v=1.0.0" rel="stylesheet"/>
+    <!-- Black Dashboard DEMO from the template-->
+    <link href="../static/demo/demo.css" rel="stylesheet"/>
+    <!-- Nucleo Icons -->
+    <link href="../static/css/nucleo-icons.css" rel="stylesheet"/>
+</head>
+<body class="sidebar-mini">
+<div class="wrapper" style="min-height: 70vh;max-height: 800px">
+    {# page content #}
+        <div class="content" >
+            <br>
+            <br>
+            <h1 align="center">Brain<span class="spectroag">Box</span></h1>
+            <br>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <div class="row">
+                            <video src="{{ url_for('rgb_feed') }} " id="video" autoplay="" muted="muted" alt=""  height="400" width="400">
+                        </div>
+                    </div>
+                    <div class="col-md-2 mr-auto">
+                        <div class="row">
+                            <div class="card" style="max-width: 100%">
+                                <h3 class="card-title ml-auto mr-auto"><b>Output information</b></h3>
+                                <div class="card-body">
+                                    <div class="col-md-4 mr-auto ">
+                                        <div class="row">
+                                            <h5 style="min-width: 280%">TCP STATUS: <b><span id="connection">Not connected</span></b></h5>
+                                        </div>
+                                        <div class="row">
+                                            <h5 style="min-width: 280%">FPS:  <b><span id="fps"></span></b></h5>
+                                        </div>
+                                        <div class="row">
+                                            <h5 style="min-width: 280%">OUTPUT: <b><span id="output"></span></b></h5>
+                                        </div>
+                                        <div class="row">
+                                            <h5 style="min-width: 280%">CONFIDENCE: <b><span id="conf">50</span></b></h5>
+                                        </div>
+                                        <div class="row">
+                                            <input type="range" min="0" max="100" value="50" class="slider" id="confSlider">
+                                            <button id="sliderButton" class="main-button" role="button">Submit</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card" style="max-width: 100%">
+                                <h3 class="card-title ml-auto mr-auto"><b>Model information</b></h3>
+                                <div class="card-body">
+                                    <div class="col-md-7 ml-auto mr-auto">
+                                        <div id="modelList" class="items-body">
+                                        </div>                                      
+                                    </div>
+                                    <div class="col-md-7 ml-auto mr-auto ">
+                                        <div class="row">
+                                            <button id="reloadButton" class="main-button" role="button">Reload Engine</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card" style="max-width: 100%">
+                                <h3 class="card-title ml-auto mr-auto"><b>Stream recording</b></h3>
+                                <div class="card-body">
+                                    <div class="col-md-7 ml-auto mr-auto ">
+                                        <div class="row">
+                                            <button id="recordButton" class="main-button" role="button">Start Recording</button>
+                                        </div>
+                                    </div>
+                                    <!-- <div class="col-md-7 ml-auto mr-auto ">
+                                        <div class="row">
+                                            <button id="stopRButton" class="main-button" role="button">Stop Recording</button>
+                                        </div>
+                                    </div> -->
+                                </div>
+                            </div>
+                        </div>
+<!--                        <div class="row">-->
+<!--                            <div class="col-md-6">-->
+<!--                                <img id="left_nozzle" src="/static/img/nozzle_non_active.png" style="width: 120px; height: 120px" alt="left">-->
+<!--                            </div>-->
+<!--                            <div class="col-md-6">-->
+<!--                                <img id="right_nozzle" src="/static/img/nozzle_non_active.png" style="width: 120px; height: 120px" alt="right">-->
+<!--                            </div>-->
+<!--                        </div>-->
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<!--   Core JS Files   -->
+<script src="/static/js/core/jquery.min.js"></script>
+<script src="/static/js/core/popper.min.js"></script>
+<script src="/static/js/core/bootstrap.min.js"></script>
+<script src="/static/js/plugins/moment.min.js"></script>
+<!-- Control Center for Black Dashboard: parallax effects, scripts for the example pages etc -->
+<script src="/static/js/black-dashboard.js?v=1.0.0"></script>
+<!-- Black Dashboard DEMO methods, don't include it in your project! -->
+<script src="/static/demo/demo.js"></script>
+<!-- Plugin for notification-->
+<script src="/static/js/plugins/jquery.validate.min.js"></script>
+<!--SocketIO library-->
+<script src="/static/js/plugins/socket.io.js"></script>
+<!--HLS.JS library-->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<!--model selection functions-->
+<script type="text/javascript" src="/static/js/modelSelection.js"></script>
+<!--HLS.JS save recording-->
+<script type="text/javascript" src="/static/js/hlsMain.js"></script>
+<!-- javascript for the project-->
+<script type="text/javascript">
+    let socket;
+
+    $(document).ready(function () {
+	    console.log('http://' + document.domain + ':' + location.port);
+        socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('connect', function () {
+            $('#connection').text('Connected');
+            console.log('SocketIO: Connected to the socket.');
+        });
+        socket.on('FPS', function (msg, cb) {
+            $('#fps').text(msg);
+        });
+        socket.on('ReloadEngine', function (msg, cb) {
+            console.log('RELOAD MESSAGE RECEIVED')
+            socket.emit('reloadEngine', {'engine': msg['engine']});
+        });
+        socket.on('ChangeConfidence', function (msg, cb) {
+            console.log('CHANGE MESSAGE RECEIVED')
+            socket.emit('changeConfidence', {'confidence': int(msg['confidence'])});
+        });
+        socket.on('SendModels', function (msg, cb) {
+            console.log('MODELS RECEIVED')
+            // addModels(msg['models'])
+            addModels(['modelList'])
+        });
+
+        // add models from list dynamically to model div
+        const modelList = ['appr1_onnx', 'chess_model']
+        addModels(modelList)
+
+        console.log('model stuff')
+        const modelList2 = ['test_model', 'test_model2']
+        addModels(modelList2)
+
+        // add reload engine button
+        const button = document.getElementById('reloadButton');
+        button.addEventListener('click', sendModel, false);
+
+        // add confidence slider
+        var slider = document.getElementById('confSlider');
+        var sliderValue = document.getElementById('conf');
+
+        slider.onchange = function() {
+            sliderValue.innerHTML = this.value;
+        }
+
+        function sendConfidence() {
+            // get confidence value and send it to backend
+            let confidence;
+            let slider = document.getElementById('confSlider');
+            confidence = slider.value;
+            console.log('send confidence');
+            console.log(confidence);
+            socket.emit('changeConfidence', {'confidence': int(confidence)});
+        }
+
+        // add confidence slider event listener that sends confidence to backend
+        const submitButton = document.getElementById('sliderButton');
+        submitButton.addEventListener('click', sendConfidence, false);
+
+        /////////////////// HLS /////////////////////
+        // add stream to video element
+        console.log('HLS')
+        var hls = new Hls();
+        var video = document.getElementById('video');
+        var videoSrc = 'http://192.168.12.1:8888/live2';
+        var videoSrc = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+        startHLS();
+        //
+        // First check for native browser HLS support
+        //
+        // if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        //   console.log('no hls')
+        //   video.src = videoSrc;
+        //   //
+        //   // If no native HLS support, check if HLS.js is supported
+        //   //
+        // } else if (Hls.isSupported()) {
+        //   console.log('hls')
+        //   // hls.loadSource(videoSrc);
+        //   hls.attachMedia(video);
+        //   hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+        //     console.log('video and hls.js are now bound together !');
+        //   });
+        //   hls.loadSource(videoSrc);
+        //   hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+        //     console.log(
+        //       'manifest loaded, found ' + data.levels.length + ' quality level'
+        //     );
+        //   });
+        // }
+        /////////////////// </HLS> /////////////////////
+
+        function changeRecordingButton() {
+            // adds recording functionality
+            let button = document.getElementById('recordButton');
+            let buttonText = button.textContent || button.innerText;
+            console.log('buttonText');
+            console.log(buttonText);
+            if (buttonText == 'Start Recording') {
+                // on record, change button and start recording
+                button.textContent = 'Stop Recording';
+                startRecording();
+            } else {
+                // on recording stop, change button and stop recording
+                button.textContent = 'Start Recording';
+                stopRecording();
+            }
+        }
+
+        const recordButton = document.getElementById('recordButton');
+        recordButton.addEventListener('click', changeRecordingButton, false);
+
+        let recorder;
+
+        function requestVideo() {
+            navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+                })
+                .then(stm => {
+                stream = stm;
+                reqBtn.style.display = 'none';
+                startBtn.removeAttribute('disabled');
+                video.src = URL.createObjectURL(stream);
+                }).catch(e => console.error(e));
+        }
+
+        function startRecording() {
+            var videoElement = document.getElementById('video');
+            // capturestream of videoelement
+            console.log('capturer');
+            recorder = new MediaRecorder(videoElement.captureStream(), {
+                mimeType: 'video/mp4'
+            });
+            recorder.start();
+        }
+
+
+        function stopRecording() {
+            recorder.ondataavailable = e => {
+                ul.style.display = 'block';
+                var a = document.createElement('a'),
+                li = document.createElement('li');
+                a.download = ['video_', (new Date() + '').slice(4, 28), '.webm'].join('');
+                a.href = URL.createObjectURL(e.data);
+                a.textContent = a.download;
+                li.appendChild(a);
+                ul.appendChild(li);
+            };
+            recorder.stop();
+        }
+    });
+</script>
+</body>
+</html>
